@@ -13,8 +13,6 @@ class Place(Base):
     def __repr__(self):
         return f"<Place {self.id} {self.name}>"
 
-
-
 class User(Base):
     __tablename__ = "users"
 

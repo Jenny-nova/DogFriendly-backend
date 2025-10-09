@@ -1,3 +1,4 @@
+'''
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -46,3 +47,18 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     return {"id": db_user.id, "username": db_user.username, "email": db_user.email}
+'''
+
+from fastapi import FastAPI
+from sqlalchemy import create_engine
+from db import Base
+import os
+
+app = FastAPI()
+
+@app.on_event("startup")
+def on_startup():
+    url = os.getenv("DATABASE_URL")
+    if url:
+        engine = create_engine(url, pool_pre_ping=True)
+        Base.metadata.create_all(bind=engine)

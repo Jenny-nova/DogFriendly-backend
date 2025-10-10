@@ -63,23 +63,30 @@ def root():
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum  # 👈 necesario para que FastAPI funcione en Vercel
+from db import get_db
 
 app = FastAPI()
 
-# ✅ CORS: permite llamadas desde tu frontend en Vercel
+# Permite solo tu frontend de Vercel
+origins = [
+    "https://dog-friendly-frontend.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://dog-friendly-frontend.vercel.app"],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Ruta raíz (para probar el despliegue)
 @app.get("/")
 def root():
     return {"ok": True}
 
-# ✅ Handler requerido por Vercel (adaptador ASGI -> Lambda)
-handler = Mangum(app)
+# Ejemplo de endpoint con DB
+@app.get("/usuarios")
+def get_usuarios(db=next(get_db())):
+    # Aquí iría tu query real a la tabla de usuarios
+    return {"usuarios": []}
+
 

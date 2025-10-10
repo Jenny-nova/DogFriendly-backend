@@ -9,7 +9,7 @@ def get_engine():
     if not url:
         raise RuntimeError("DATABASE_URL no definida")
     
-    # Ajuste opcional si url empieza con postgres://
+    # Ajuste si la URL empieza con postgres://
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg2://", 1)
     
@@ -17,8 +17,8 @@ def get_engine():
 
 def get_db():
     """
-    Devuelve una sesión de base de datos para cada invocación.
-    Evita problemas con serverless y conexiones cerradas.
+    Devuelve una sesión de base de datos para cada request.
+    Compatible con entornos persistentes.
     """
     engine = get_engine()
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -27,6 +27,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 
 

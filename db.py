@@ -3,6 +3,39 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 Base = declarative_base()
+
+def get_engine():
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DATABASE_URL no definida")
+    
+    # Ajuste opcional si url empieza con postgres://
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    
+    return create_engine(url, pool_pre_ping=True)
+
+def get_db():
+    """
+    Devuelve una sesión de base de datos para cada invocación.
+    Evita problemas con serverless y conexiones cerradas.
+    """
+    engine = get_engine()
+    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+'''
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+Base = declarative_base()
 _engine = None
 _SessionLocal = None
 
@@ -27,7 +60,7 @@ def get_db():
         yield db
     finally:
         db.close()
-
+'''
 
 '''
 import os

@@ -60,7 +60,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 def root():
     return {"ok": True}
 '''
-
+'''
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -85,6 +85,57 @@ def root():
 @app.get("/places")
 def get_places(city: str = Query(...), db: Session = Depends(get_db)):
     lugares = db.query(Place).filter(Place.city.ilike(f"%{city}%")).all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "address": p.address,
+            "city": p.city,
+            "country": p.country
+        } for p in lugares
+    ]
+
+# Endpoint para registrar usuario
+@app.post("/register")
+def register_user(username: str, email: str, db: Session = Depends(get_db)):
+    existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
+    if existing:
+        return {"error": "Usuario o email ya registrado"}
+    
+    user = User(username=username, email=email)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "username": user.username, "email": user.email}
+'''
+
+from fastapi import FastAPI, Depends, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from db import get_db
+from models import Place, User
+
+app = FastAPI()
+
+# CORS para permitir peticiones desde tu frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # O cambia "*" por tu dominio de frontend
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+@app.get("/")
+def root():
+    return {"ok": True}
+
+# Endpoint para listar lugares, city ahora opcional
+@app.get("/places")
+def get_places(city: str = Query(None, description="Ciudad para filtrar lugares"), db: Session = Depends(get_db)):
+    query = db.query(Place)
+    if city:
+        query = query.filter(Place.city.ilike(f"%{city}%"))
+    lugares = query.all()
     return [
         {
             "id": p.id,

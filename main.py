@@ -61,32 +61,49 @@ def root():
     return {"ok": True}
 '''
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from db import get_db
+from models import Place, User
 
 app = FastAPI()
 
-# Permite solo tu frontend de Vercel
-origins = [
-    "https://dog-friendly-frontend.vercel.app"
-]
-
+# CORS para permitir peticiones desde tu frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # O cambia "*" por tu dominio de frontend
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 @app.get("/")
 def root():
     return {"ok": True}
 
-# Ejemplo de endpoint con DB
-@app.get("/usuarios")
-def get_usuarios(db=next(get_db())):
-    # Aquí iría tu query real a la tabla de usuarios
-    return {"usuarios": []}
+# Endpoint para listar lugares por ciudad
+@app.get("/places")
+def get_places(city: str = Query(...), db: Session = Depends(get_db)):
+    lugares = db.query(Place).filter(Place.city.ilike(f"%{city}%")).all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "address": p.address,
+            "city": p.city,
+            "country": p.country
+        } for p in lugares
+    ]
 
-
+# Endpoint para registrar usuario
+@app.post("/register")
+def register_user(username: str, email: str, db: Session = Depends(get_db)):
+    existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
+    if existing:
+        return {"error": "Usuario o email ya registrado"}
+    
+    user = User(username=username, email=email)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "username": user.username, "email": user.email}

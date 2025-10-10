@@ -49,7 +49,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"id": db_user.id, "username": db_user.username, "email": db_user.email}
 
 '''
-
+'''
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -59,4 +59,27 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.get("/")
 def root():
     return {"ok": True}
+'''
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum  # 👈 necesario para que FastAPI funcione en Vercel
+
+app = FastAPI()
+
+# ✅ CORS: permite llamadas desde tu frontend en Vercel
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://dog-friendly-frontend.vercel.app"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ Ruta raíz (para probar el despliegue)
+@app.get("/")
+def root():
+    return {"ok": True}
+
+# ✅ Handler requerido por Vercel (adaptador ASGI -> Lambda)
+handler = Mangum(app)
 
